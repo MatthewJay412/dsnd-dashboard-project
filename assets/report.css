@@ -3,3 +3,17 @@ body {
     margin-left: 25%;
     height: 100%;
 }
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  
+  .logo {
+    height: 150px;
+    width: auto;
+  }
+  

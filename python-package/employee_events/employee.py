@@ -1,65 +1,36 @@
-# Import the QueryBase class
-#### YOUR CODE HERE
+from .query_base import QueryBase
 
-# Import dependencies needed for sql execution
-# from the `sql_execution` module
-#### YOUR CODE HERE
+class Employee(QueryBase):
 
-# Define a subclass of QueryBase
-# called Employee
-#### YOUR CODE HERE
+    name = "employee"
 
-    # Set the class attribute `name`
-    # to the string "employee"
-    #### YOUR CODE HERE
-
-
-    # Define a method called `names`
-    # that receives no arguments
-    # This method should return a list of tuples
-    # from an sql execution
-    #### YOUR CODE HERE
-        
-        # Query 3
-        # Write an SQL query
-        # that selects two columns 
-        # 1. The employee's full name
-        # 2. The employee's id
-        # This query should return the data
-        # for all employees in the database
-        #### YOUR CODE HERE
-    
-
-    # Define a method called `username`
-    # that receives an `id` argument
-    # This method should return a list of tuples
-    # from an sql execution
-    #### YOUR CODE HERE
-        
-        # Query 4
-        # Write an SQL query
-        # that selects an employees full name
-        # Use f-string formatting and a WHERE filter
-        # to only return the full name of the employee
-        # with an id equal to the id argument
-        #### YOUR CODE HERE
-
-
-    # Below is method with an SQL query
-    # This SQL query generates the data needed for
-    # the machine learning model.
-    # Without editing the query, alter this method
-    # so when it is called, a pandas dataframe
-    # is returns containing the execution of
-    # the sql query
-    #### YOUR CODE HERE
-    def model_data(self, id):
-
-        return f"""
-                    SELECT SUM(positive_events) positive_events
-                         , SUM(negative_events) negative_events
-                    FROM {self.name}
-                    JOIN employee_events
-                        USING({self.name}_id)
-                    WHERE {self.name}.{self.name}_id = {id}
+    def names(self):
+        # Grab all employees from the database with full names and IDs
+        # We mash together first and last name for display purposes
+        sql_query = """
+                       SELECT first_name || ' ' || last_name AS full_name, employee_id
+                       FROM employee
                 """
+        return self.query(sql_query)
+
+    def username(self, id):
+        # Given an employee ID, this pulls their full name from the database
+        sql_query = f"""
+                    SELECT first_name || ' ' || last_name AS full_name
+                    FROM employee
+                    WHERE employee_id = {id}
+                """
+        return self.query(sql_query)
+
+    def model_data(self, id):
+        # This is where we fetch the data we want to feed into our model
+        # It grabs total counts of good and bad events for one employee
+        sql_query = f"""
+               SELECT SUM(positive_events) AS positive_events,
+                      SUM(negative_events) AS negative_events
+               FROM {self.name}
+               JOIN employee_events USING({self.name}_id)
+               WHERE {self.name}.{self.name}_id = {id}
+           """
+
+        return self.pandas_query(sql_query)

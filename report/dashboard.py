@@ -1,301 +1,166 @@
 from fasthtml.common import *
 import matplotlib.pyplot as plt
-
-# Import QueryBase, Employee, Team from employee_events
-#### YOUR CODE HERE
-
-# import the load_model function from the utils.py file
-#### YOUR CODE HERE
-
-"""
-Below, we import the parent classes
-you will use for subclassing
-"""
-from base_components import (
-    Dropdown,
-    BaseComponent,
-    Radio,
-    MatplotlibViz,
-    DataTable
-    )
-
+from employee_events import Employee, Team
+from utils import load_model
+from base_components import Dropdown, BaseComponent, Radio, MatplotlibViz, DataTable
 from combined_components import FormGroup, CombinedComponent
 
+# Custom dropdown for picking a report subject (employee or team)
+class ReportDropdown(Dropdown):
+    def build_component(self, entity_id, model, *args, **kwargs):
+        self.label = model.name  # Use the model name as the label
+        return super().build_component(entity_id, model, *args, **kwargs)
 
-# Create a subclass of base_components/dropdown
-# called `ReportDropdown`
-#### YOUR CODE HERE
-    
-    # Overwrite the build_component method
-    # ensuring it has the same parameters
-    # as the Report parent class's method
-    #### YOUR CODE HERE
-        #  Set the `label` attribute so it is set
-        #  to the `name` attribute for the model
-        #### YOUR CODE HERE
-        
-        # Return the output from the
-        # parent class's build_component method
-        #### YOUR CODE HERE
-    
-    # Overwrite the `component_data` method
-    # Ensure the method uses the same parameters
-    # as the parent class method
-    #### YOUR CODE HERE
-        # Using the model argument
-        # call the employee_events method
-        # that returns the user-type's
-        # names and ids
+    def component_data(self, entity_id, model, *args, **kwargs):
+        return model.names()  # Just give us a list of names to populate the dropdown
 
 
-# Create a subclass of base_components/BaseComponent
-# called `Header`
-#### YOUR CODE HERE
-
-    # Overwrite the `build_component` method
-    # Ensure the method has the same parameters
-    # as the parent class
-    #### YOUR CODE HERE
-        
-        # Using the model argument for this method
-        # return a fasthtml H1 objects
-        # containing the model's name attribute
-        #### YOUR CODE HERE
-          
-
-# Create a subclass of base_components/MatplotlibViz
-# called `LineChart`
-#### YOUR CODE HERE
-    
-    # Overwrite the parent class's `visualization`
-    # method. Use the same parameters as the parent
-    #### YOUR CODE HERE
-    
-
-        # Pass the `asset_id` argument to
-        # the model's `event_counts` method to
-        # receive the x (Day) and y (event count)
-        #### YOUR CODE HERE
-        
-        # Use the pandas .fillna method to fill nulls with 0
-        #### YOUR CODE HERE
-        
-        # User the pandas .set_index method to set
-        # the date column as the index
-        #### YOUR CODE HERE
-        
-        # Sort the index
-        #### YOUR CODE HERE
-        
-        # Use the .cumsum method to change the data
-        # in the dataframe to cumulative counts
-        #### YOUR CODE HERE
-        
-        
-        # Set the dataframe columns to the list
-        # ['Positive', 'Negative']
-        #### YOUR CODE HERE
-        
-        # Initialize a pandas subplot
-        # and assign the figure and axis
-        # to variables
-        #### YOUR CODE HERE
-        
-        # call the .plot method for the
-        # cumulative counts dataframe
-        #### YOUR CODE HERE
-        
-        # pass the axis variable
-        # to the `.set_axis_styling`
-        # method
-        # Use keyword arguments to set 
-        # the border color and font color to black. 
-        # Reference the base_components/matplotlib_viz file 
-        # to inspect the supported keyword arguments
-        #### YOUR CODE HERE
-        
-        # Set title and labels for x and y axis
-        #### YOUR CODE HERE
+# Logo and page title up top
+class Header(BaseComponent):
+    def build_component(self, entity_id, model, *args, **kwargs):
+        logo_url = "https://iili.io/38ibE8J.jpg"
+        return Div(cls="page-header")(
+            Img(
+                src=logo_url,
+                alt="My Logo",
+                style="display: block; margin-left: auto; margin-right: auto; height: 500px; width: auto;"
+            ),
+            H1(model.name)
+        )
 
 
-# Create a subclass of base_components/MatplotlibViz
-# called `BarChart`
-#### YOUR CODE HERE
+# Line chart to visualize how event counts stack up over time
+class LineChart(MatplotlibViz):
+    def visualization(self, asset_id, model, *args, **kwargs):
+        df = model.event_counts(asset_id).fillna(0)
+        df = df.set_index("event_date").sort_index().cumsum()
+        df.columns = ["Positive", "Negative"]
 
-    # Create a `predictor` class attribute
-    # assign the attribute to the output
-    # of the `load_model` utils function
-    #### YOUR CODE HERE
+        fig, ax = plt.subplots(figsize=(12, 8))
+        df.plot(ax=ax, color=['green', 'red'], linestyle='--', marker='o', linewidth=2)
 
-    # Overwrite the parent class `visualization` method
-    # Use the same parameters as the parent
-    #### YOUR CODE HERE
+        ax.set_title("Events of the Employees", fontsize=25, fontweight='bold', color='navy')
+        ax.set_xlabel("Date", fontsize=20, color='purple')
+        ax.set_ylabel("Cumulative Events (Count)", fontsize=25, color='purple')
 
-        # Using the model and asset_id arguments
-        # pass the `asset_id` to the `.model_data` method
-        # to receive the data that can be passed to the machine
-        # learning model
-        #### YOUR CODE HERE
-        
-        # Using the predictor class attribute
-        # pass the data to the `predict_proba` method
-        #### YOUR CODE HERE
-        
-        # Index the second column of predict_proba output
-        # The shape should be (<number of records>, 1)
-        #### YOUR CODE HERE
-        
-        
-        # Below, create a `pred` variable set to
-        # the number we want to visualize
-        #
-        # If the model's name attribute is "team"
-        # We want to visualize the mean of the predict_proba output
-        #### YOUR CODE HERE
-            
-        # Otherwise set `pred` to the first value
-        # of the predict_proba output
-        #### YOUR CODE HERE
-        
-        # Initialize a matplotlib subplot
-        #### YOUR CODE HERE
-        
-        # Run the following code unchanged
-        ax.barh([''], [pred])
+        ax.grid(True, linestyle=':', linewidth=0.8)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.tick_params(axis='x', rotation=45)
+
+        ax.legend(title="Event Type", fontsize=12, title_fontsize=14)
+
+        self.set_axis_styling(ax)
+        return fig
+
+
+# Bar chart that shows how risky recruitment is for a given employee or team
+class BarChart(MatplotlibViz):
+    predictor = load_model()  # Load the prediction model just once
+
+    def visualization(self, asset_id, model, *args, **kwargs):
+        probas = self.predictor.predict_proba(model.model_data(asset_id))[:, 1]
+        pred = probas.mean() if model.name == "team" else probas[0]
+
+        fig, ax = plt.subplots(figsize=(8, 3))
+        fig.suptitle("Recruitment Risk Prediction", fontsize=20, fontweight='bold', color='navy')
+
+        bar_color = 'green' if pred < 0.3 else 'orange' if pred < 0.6 else 'red'
+        ax.barh([0], [pred], color=bar_color, edgecolor='black', height=0.4)
+
+        text_x = pred / 2 if pred > 0.1 else pred + 0.02
+        text_color = 'white' if pred > 0.1 else 'black'
+        ha = 'center' if pred > 0.1 else 'left'
+
+        ax.text(text_x, 0, f"{pred:.1%}", va='center', ha=ha, fontsize=12, color=text_color, fontweight='bold')
+
         ax.set_xlim(0, 1)
-        ax.set_title('Predicted Recruitment Risk', fontsize=20)
-        
-        # pass the axis variable
-        # to the `.set_axis_styling`
-        # method
-        #### YOUR CODE HERE
- 
-# Create a subclass of combined_components/CombinedComponent
-# called Visualizations       
-#### YOUR CODE HERE
+        ax.set_ylim(-0.5, 0.5)
+        ax.get_yaxis().set_visible(False)
+        ax.set_xlabel("Risk Probability", fontsize=15, color='purple')
 
-    # Set the `children`
-    # class attribute to a list
-    # containing an initialized
-    # instance of `LineChart` and `BarChart`
-    #### YOUR CODE HERE
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.grid(True, axis='x', linestyle='--', alpha=0.5)
 
-    # Leave this line unchanged
-    outer_div_type = Div(cls='grid')
-            
-# Create a subclass of base_components/DataTable
-# called `NotesTable`
-#### YOUR CODE HERE
+        self.set_axis_styling(ax)
+        return fig
 
-    # Overwrite the `component_data` method
-    # using the same parameters as the parent class
-    #### YOUR CODE HERE
-        
-        # Using the model and entity_id arguments
-        # pass the entity_id to the model's .notes 
-        # method. Return the output
-        #### YOUR CODE HERE
-    
 
+# A tidy bundle of both visualizations
+class Visualizations(CombinedComponent):
+    children = [LineChart(), BarChart()]
+    outer_div_type = Div(cls="grid")
+
+
+# Just a simple notes table – think of it like comment logs
+class NotesTable(DataTable):
+    def component_data(self, entity_id, model, *args, **kwargs):
+        return model.notes(entity_id)
+
+
+# These are your filters at the top of the dashboard
 class DashboardFilters(FormGroup):
-
     id = "top-filters"
     action = "/update_data"
-    method="POST"
-
+    method = "POST"
     children = [
         Radio(
             values=["Employee", "Team"],
-            name='profile_type',
-            hx_get='/update_dropdown',
-            hx_target='#selector'
-            ),
-        ReportDropdown(
-            id="selector",
-            name="user-selection")
-        ]
-    
-# Create a subclass of CombinedComponents
-# called `Report`
-#### YOUR CODE HERE
-
-    # Set the `children`
-    # class attribute to a list
-    # containing initialized instances 
-    # of the header, dashboard filters,
-    # data visualizations, and notes table
-    #### YOUR CODE HERE
-
-# Initialize a fasthtml app 
-#### YOUR CODE HERE
-
-# Initialize the `Report` class
-#### YOUR CODE HERE
+            name="profile_type",
+            hx_get="/update_dropdown",
+            hx_target="#selector",
+        ),
+        ReportDropdown(id="selector", name="user-selection"),
+    ]
 
 
-# Create a route for a get request
-# Set the route's path to the root
-#### YOUR CODE HERE
-
-    # Call the initialized report
-    # pass the integer 1 and an instance
-    # of the Employee class as arguments
-    # Return the result
-    #### YOUR CODE HERE
-
-# Create a route for a get request
-# Set the route's path to receive a request
-# for an employee ID so `/employee/2`
-# will return the page for the employee with
-# an ID of `2`. 
-# parameterize the employee ID 
-# to a string datatype
-#### YOUR CODE HERE
-
-    # Call the initialized report
-    # pass the ID and an instance
-    # of the Employee SQL class as arguments
-    # Return the result
-    #### YOUR CODE HERE
-
-# Create a route for a get request
-# Set the route's path to receive a request
-# for a team ID so `/team/2`
-# will return the page for the team with
-# an ID of `2`. 
-# parameterize the team ID 
-# to a string datatype
-#### YOUR CODE HERE
-
-    # Call the initialized report
-    # pass the id and an instance
-    # of the Team SQL class as arguments
-    # Return the result
-    #### YOUR CODE HERE
+# The whole report page, stitched together
+class Report(CombinedComponent):
+    children = [Header(), DashboardFilters(), Visualizations(), NotesTable()]
 
 
-# Keep the below code unchanged!
-@app.get('/update_dropdown{r}')
+# App setup – like flipping the switch to turn things on
+app = FastHTML()
+report = Report()
+
+
+# Default landing page shows report for Employee #1
+@app.get("/")
+def home():
+    return report("1", Employee())
+
+
+# Endpoint to view individual employee dashboards
+@app.get("/employee/{iid:str}")
+def employee_report(iid: str):
+    return report(iid, Employee())
+
+
+# Same thing, but for teams
+@app.get("/team/{iid:str}")
+def team_report(iid: str):
+    return report(iid, Team())
+
+
+# Called when switching between Employee or Team dropdown options
+@app.get("/update_dropdown")
 def update_dropdown(r):
     dropdown = DashboardFilters.children[1]
-    print('PARAM', r.query_params['profile_type'])
-    if r.query_params['profile_type'] == 'Team':
-        return dropdown(None, Team())
-    elif r.query_params['profile_type'] == 'Employee':
-        return dropdown(None, Employee())
+    profile_type = r.query_params["profile_type"]
+    return dropdown(None, Team() if profile_type == "Team" else Employee())
 
 
-@app.post('/update_data')
+# Handles form submission and redirects you to the correct report
+@app.post("/update_data")
 async def update_data(r):
     from fasthtml.common import RedirectResponse
     data = await r.form()
-    profile_type = data._dict['profile_type']
-    id = data._dict['user-selection']
-    if profile_type == 'Employee':
-        return RedirectResponse(f"/employee/{id}", status_code=303)
-    elif profile_type == 'Team':
-        return RedirectResponse(f"/team/{id}", status_code=303)
-    
+    profile_type = data._dict["profile_type"]
+    user_id = data._dict["user-selection"]
+    return RedirectResponse(f"/{profile_type.lower()}/{user_id}", status_code=303)
 
 
+# Start the app!
 serve()
