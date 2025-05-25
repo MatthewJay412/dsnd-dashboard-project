@@ -29,6 +29,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pytest
         cd ./python-package
+        pip install dist/employee_events-0.0.tar.gz
         python setup.py sdist
         cd ..
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
