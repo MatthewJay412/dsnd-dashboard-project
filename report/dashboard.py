@@ -34,7 +34,7 @@ class LineChart(MatplotlibViz):
     def visualization(self, asset_id, model, *args, **kwargs):
         df = model.event_counts(asset_id).fillna(0)
         df = df.set_index("event_date").sort_index().cumsum()
-        df.columns = ["Positive", "Negative"]
+        df.columns = ["Positive Events", "Negative Events"]
 
         fig, ax = plt.subplots(figsize=(12, 8))
         df.plot(ax=ax, color=['green', 'red'], linestyle='--', marker='o', linewidth=2)
@@ -48,7 +48,7 @@ class LineChart(MatplotlibViz):
         ax.spines['right'].set_visible(False)
         ax.tick_params(axis='x', rotation=45)
 
-        ax.legend(title="Event Type", fontsize=12, title_fontsize=14)
+        ax.legend(title="Event", fontsize=14, title_fontsize=16)
 
         self.set_axis_styling(ax)
         return fig
@@ -107,7 +107,7 @@ class DashboardFilters(FormGroup):
     method = "POST"
     children = [
         Radio(
-            values=["Employee", "Team"],
+            values=["EMPLOYEE", "TEAM"],
             name="profile_type",
             hx_get="/update_dropdown",
             hx_target="#selector",
